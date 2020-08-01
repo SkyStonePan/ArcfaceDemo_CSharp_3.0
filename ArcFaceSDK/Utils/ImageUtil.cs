@@ -91,7 +91,6 @@ namespace ArcFaceSDK.Utils
 
                 //获取去除对齐位后度图像数据
                 int line = imageInfo.width;
-                int pitch = Math.Abs(data.Stride);
                 int ir_len = line * imageInfo.height;
                 byte[] destBitArray = new byte[ir_len];
 
@@ -229,7 +228,7 @@ namespace ArcFaceSDK.Utils
             try
             {
                 //按比例缩放           
-                float scaleRate = getWidthAndHeight(image.Width, image.Height, dstWidth, dstHeight);
+                float scaleRate = GetWidthAndHeight(image.Width, image.Height, dstWidth, dstHeight);
                 int width = (int)(image.Width * scaleRate);
                 int height = (int)(image.Height * scaleRate);
 
@@ -247,7 +246,7 @@ namespace ArcFaceSDK.Utils
                 g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
                 g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                g.DrawImage(image, new Rectangle((width - width) / 2, (height - height) / 2, width, height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel);
+                g.DrawImage(image, new Rectangle(0, 0, width, height), 0, 0, image.Width, image.Height, GraphicsUnit.Pixel);
 
                 return destBitmap;
             }
@@ -305,7 +304,7 @@ namespace ArcFaceSDK.Utils
         /// </summary>
         /// <param name="imageUrl"></param>
         /// <returns></returns>
-        public static Image readFromFile(string imageUrl)
+        public static Image ReadFromFile(string imageUrl)
         {
             Image img = null;
             FileStream fs = null;
@@ -329,7 +328,7 @@ namespace ArcFaceSDK.Utils
         /// <param name="newWidth">目标图片宽</param>
         /// <param name="newHeight">目标图片高</param>
         /// <returns></returns>
-        public static float getWidthAndHeight(int oldWidth, int oldHeigt, int newWidth, int newHeight)
+        public static float GetWidthAndHeight(int oldWidth, int oldHeigt, int newWidth, int newHeight)
         {
             //按比例缩放           
             float scaleRate = 0.0f;

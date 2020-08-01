@@ -104,9 +104,9 @@
             // 
             // imageLists
             // 
-            this.imageLists.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageLists.ImageStream")));
+            this.imageLists.ColorDepth = System.Windows.Forms.ColorDepth.Depth32Bit;
+            this.imageLists.ImageSize = new System.Drawing.Size(80, 80);
             this.imageLists.TransparentColor = System.Drawing.Color.Transparent;
-            this.imageLists.Images.SetKeyName(0, "alai_152784032385984494.jpg");
             // 
             // imageList
             // 
@@ -189,6 +189,7 @@
             this.txtThreshold.Size = new System.Drawing.Size(60, 25);
             this.txtThreshold.TabIndex = 40;
             this.txtThreshold.Text = "0.8";
+            this.txtThreshold.TextChanged += new System.EventHandler(this.txtThreshold_TextChanged);
             this.txtThreshold.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.txtThreshold_KeyPress);
             this.txtThreshold.KeyUp += new System.Windows.Forms.KeyEventHandler(this.txtThreshold_KeyUp);
             // 

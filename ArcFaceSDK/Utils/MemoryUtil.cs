@@ -120,7 +120,6 @@ namespace ArcFaceSDK.Utils
             IntPtr structPtr = Marshal.AllocHGlobal(size);
             //将数据从托管对象structObj封送到非托管内存块structPtr  
             Marshal.StructureToPtr(structObj, structPtr, false);
-            //Marshal.StructureToPtr(structObj, structPtr, true);  
             //将数据从非托管内存指针复制到托管 8 位无符号整数数组  
             Marshal.Copy(structPtr, bytes, 0, size);
             //释放以前使用 AllocHGlobal 从进程的非托管内存中分配的内存  

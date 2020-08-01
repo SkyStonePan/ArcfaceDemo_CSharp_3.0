@@ -101,7 +101,7 @@ namespace ArcSoftFace.Utils
                 multiFaceInfo.faceRects = new MRECT[1];
                 multiFaceInfo.faceRects[0] = singleFaceInfo.faceRect;
 
-                int retCode = faceEngine.ASFFaceFeatureExtractEx(image, multiFaceInfo, out faceFeature);
+                faceEngine.ASFFaceFeatureExtractEx(image, multiFaceInfo, out faceFeature);
             }
             catch (Exception ex)
             {
@@ -213,18 +213,20 @@ namespace ArcSoftFace.Utils
         /// </summary>
         /// <param name="pEngine">引擎Handle</param>
         /// <param name="imageInfo">图像数据</param>
-        /// <param name="multiFaceInfo">检测的人脸信息</param>
+        /// <param name="singleFaceInfo">单人脸信息</param>
         /// <returns>活体检测结果</returns>
-        public static LivenessInfo LivenessInfo_RGB(FaceEngine faceEngine, Image image, MultiFaceInfo multiFaceInfo, out int retCode)
+        public static LivenessInfo LivenessInfo_RGB(FaceEngine faceEngine, Image image, SingleFaceInfo singleFaceInfo, out int retCode)
         {
             LivenessInfo livenessInfo = new LivenessInfo();
             retCode = -1;
             try
             {
-                if (multiFaceInfo.faceNum <= 0)
-                {
-                    return livenessInfo;
-                }
+                MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
+                multiFaceInfo.faceNum = 1;
+                multiFaceInfo.faceOrients = new int[1];
+                multiFaceInfo.faceOrients[0] = singleFaceInfo.faceOrient;
+                multiFaceInfo.faceRects = new MRECT[1];
+                multiFaceInfo.faceRects[0] = singleFaceInfo.faceRect;
                 //人脸信息检测
                 retCode = faceEngine.ASFProcessEx(image, multiFaceInfo, FaceEngineMask.ASF_LIVENESS);
                 if (retCode == 0)
@@ -245,18 +247,20 @@ namespace ArcSoftFace.Utils
         /// </summary>
         /// <param name="pEngine">引擎Handle</param>
         /// <param name="imageInfo">图像数据</param>
-        /// <param name="multiFaceInfo">检测的人脸信息</param>
+        /// <param name="singleFaceInfo">单人脸信息</param>
         /// <returns>活体检测结果</returns>
-        public static LivenessInfo LivenessInfo_IR(FaceEngine faceEngine, Image image, MultiFaceInfo multiFaceInfo, out int retCode)
+        public static LivenessInfo LivenessInfo_IR(FaceEngine faceEngine, Image image, SingleFaceInfo singleFaceInfo, out int retCode)
         {
             LivenessInfo livenessInfo = new LivenessInfo();
             retCode = -1;
             try
             {
-                if (multiFaceInfo.faceNum <= 0)
-                {
-                    return livenessInfo;
-                }
+                MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
+                multiFaceInfo.faceNum = 1;
+                multiFaceInfo.faceOrients = new int[1];
+                multiFaceInfo.faceOrients[0] = singleFaceInfo.faceOrient;
+                multiFaceInfo.faceRects = new MRECT[1];
+                multiFaceInfo.faceRects[0] = singleFaceInfo.faceRect;
                 //人脸信息处理
                 retCode = faceEngine.ASFProcessEx_IR(image, multiFaceInfo, FaceEngineMask.ASF_IR_LIVENESS);
                 if (retCode == 0)
