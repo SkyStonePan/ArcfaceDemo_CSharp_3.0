@@ -437,6 +437,22 @@ namespace ArcSoftFace
                                 {
                                     image = ImageUtil.ScaleImage(image, image.Width - (image.Width % 4), image.Height);
                                 }
+                                //提取特征判断
+                                int featureCode = -1;
+                                SingleFaceInfo singleFaceInfo = new SingleFaceInfo();
+                                FaceFeature feature = FaceUtil.ExtractFeature(imageEngine, image, out singleFaceInfo, ref featureCode);
+                                if (featureCode != 0)
+                                {
+                                    this.Invoke(new Action(delegate
+                                    {
+                                        AppendText("未检测到人脸");
+                                    }));
+                                    if (image != null)
+                                    {
+                                        image.Dispose();
+                                    }
+                                    continue;
+                                }
                                 //人脸检测
                                 MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
                                 int retCode = imageEngine.ASFDetectFacesEx(image, out multiFaceInfo);
@@ -451,6 +467,10 @@ namespace ArcSoftFace
                                 }
                                 else
                                 {
+                                    this.Invoke(new Action(delegate
+                                    {
+                                        AppendText("未检测到人脸");
+                                    }));
                                     if (image != null)
                                     {
                                         image.Dispose();
@@ -470,7 +490,9 @@ namespace ArcSoftFace
                                     
                                     imageList.Items.Add((numStart + isGoodImage) + "号", imagePathListTemp[i]);
                                     imageList.Refresh();
-                                    isGoodImage += 1;
+                                    AppendText(string.Format("已提取{0}号人脸特征值，[left:{1},right:{2},top:{3},bottom:{4},orient:{5}]", (numStart + isGoodImage), singleFaceInfo.faceRect.left, singleFaceInfo.faceRect.right, singleFaceInfo.faceRect.top, singleFaceInfo.faceRect.bottom, singleFaceInfo.faceOrient));
+                                    imagesFeatureList.Add(feature);
+                                    isGoodImage++;
                                     if (image != null)
                                     {
                                         image.Dispose();
@@ -478,39 +500,6 @@ namespace ArcSoftFace
                                 }));
                             }
 
-                            //提取人脸特征
-                            for (int i = numStart; i < imagePathList.Count; i++)
-                            {
-                                Image image = ImageUtil.ReadFromFile(imagePathList[i]);
-                                CheckImageWidthAndHeight(ref image);
-                                if (image == null)
-                                {
-                                    continue;
-                                }
-                                if (image.Width % 4 != 0)
-                                {
-                                    image = ImageUtil.ScaleImage(image, image.Width - (image.Width % 4), image.Height);
-                                }
-                                int retCode = -1;
-                                SingleFaceInfo singleFaceInfo = new SingleFaceInfo();
-                                FaceFeature feature = FaceUtil.ExtractFeature(imageEngine, image, out singleFaceInfo, ref retCode);
-                                this.Invoke(new Action(delegate
-                                {
-                                    if (retCode != 0)
-                                    {
-                                        AppendText(string.Format("{0}号未检测到人脸", i));
-                                    }
-                                    else
-                                    {
-                                        AppendText(string.Format("已提取{0}号人脸特征值，[left:{1},right:{2},top:{3},bottom:{4},orient:{5}]", i, singleFaceInfo.faceRect.left, singleFaceInfo.faceRect.right, singleFaceInfo.faceRect.top, singleFaceInfo.faceRect.bottom, singleFaceInfo.faceOrient));
-                                        imagesFeatureList.Add(feature);
-                                    }
-                                }));
-                                if (image != null)
-                                {
-                                    image.Dispose();
-                                }
-                            }
                             //允许点击按钮
                             Invoke(new Action(delegate
                             {
