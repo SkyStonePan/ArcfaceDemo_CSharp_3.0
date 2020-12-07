@@ -760,7 +760,7 @@ namespace ArcFaceSDK
             //调用SDK接口
             retCode = ASFFunctions.ASFProcessEx_IR(pEngine, pImageInfo, pMultiFaceInfo, combinedMask);
             //释放内存
-            MemoryUtil.FreeArray(multiFaceInfoStruct.faceID, multiFaceInfoStruct.faceOrients, multiFaceInfoStruct.faceRects, pMultiFaceInfo, pImageInfo);
+            MemoryUtil.FreeArray(imageInfo.imgData, multiFaceInfoStruct.faceID, multiFaceInfoStruct.faceOrients, multiFaceInfoStruct.faceRects, pMultiFaceInfo, pImageInfo);
 
             return retCode;
         }
