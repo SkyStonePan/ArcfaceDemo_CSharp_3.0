@@ -55,6 +55,7 @@ namespace ArcFaceSDK.Utils
             finally
             {
                 bm.UnlockBits(data);
+                bm.Dispose();
             }
         }
 
@@ -115,6 +116,7 @@ namespace ArcFaceSDK.Utils
             finally
             {
                 bm.UnlockBits(data);
+                bm.Dispose();
             }
         }
         
