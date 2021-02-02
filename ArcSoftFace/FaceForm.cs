@@ -44,9 +44,9 @@ namespace ArcSoftFace
         private int maxHeight = 1536;
 
         /// <summary>
-        /// 右侧图片人脸特征
+        /// 比对人脸图片人脸特征
         /// </summary>
-        private FaceFeature image1Feature;
+        private List<FaceFeature> rightImageFeatureList = new List<FaceFeature>();
 
         /// <summary>
         /// 保存对比图片的列表
@@ -54,14 +54,9 @@ namespace ArcSoftFace
         private List<string> imagePathList = new List<string>();
 
         /// <summary>
-        /// 是否存在新的人脸
+        /// 人脸库人脸特征列表
         /// </summary>
-        private bool existNewFace = true;
-
-        /// <summary>
-        /// 左侧图库人脸特征列表
-        /// </summary>
-        private List<FaceFeature> imagesFeatureList = new List<FaceFeature>();
+        private List<FaceFeature> leftImageFeatureList = new List<FaceFeature>();
 
         /// <summary>
         /// 相似度
@@ -72,87 +67,6 @@ namespace ArcSoftFace
         /// 用于标记是否需要清除比对结果
         /// </summary>
         private bool isCompare = false;
-
-        /// <summary>
-        /// 处理队列
-        /// </summary>
-        private List<int> handleQueue = new List<int>();
-
-        /// <summary>
-        /// 人脸ID初始值
-        /// </summary>
-        private int faceIdTempInitValue = -1;
-
-        /// <summary>
-        /// 人脸ID暂存区
-        /// </summary>
-        private int faceIDTemp = -1;
-
-        /// <summary>
-        /// 活体检测返回结果
-        /// 0：非真人；1：真人；-1：不确定；-2:传入人脸数>1；
-        /// </summary>
-        private int livenessResult = -10;
-
-        /// <summary>
-        /// 检测人脸，得到Rect框
-        /// </summary>
-        private MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
-
-        /// <summary>
-        /// 得到最大人脸
-        /// </summary>
-        private SingleFaceInfo maxFace = new SingleFaceInfo();
-
-        /// <summary>
-        /// 得到Rect
-        /// </summary>
-        private MRECT rect = new MRECT();
-
-        /// <summary>
-        /// 读faceinfo开关
-        /// </summary>
-        private bool ableReadFaceInfo = false;
-
-        /// <summary>
-        /// 读活体信息开关
-        /// </summary>
-        private bool ableReadLiveess = false;
-
-        /// <summary>
-        /// 读FR信息开关
-        /// </summary>
-        private bool ableReadFR = false;
-
-        /// <summary>
-        /// 活体结果初始值
-        /// </summary>
-        private int livenessInitValue = -10;
-        
-        /// <summary>
-        /// 活体返回值
-        /// </summary>
-        private int retCodeLiveness = -10;
-
-        /// <summary>
-        /// 关闭FR线程开关
-        /// </summary>
-        private bool exitVideoRGBFR = false;
-
-        /// <summary>
-        /// 关闭活体线程开关
-        /// </summary>
-        private bool exitVideoRGBLiveness = false;
-
-        /// <summary>
-        /// FR失败重试次数
-        /// </summary>
-        private double frMatchTime = 3;
-
-        /// <summary>
-        /// 活体检测失败重试次数
-        /// </summary>
-        private double liveMatchTime = 3;
 
         #region 视频模式下相关
         /// <summary>
@@ -186,11 +100,6 @@ namespace ArcSoftFace
         private VideoCaptureDevice irDeviceVideo;
         
         /// <summary>
-        /// 缓存的IR视频帧检测FaceId
-        /// </summary>
-        private int irTempFaceId;
-
-        /// <summary>
         /// 是否是双目摄像
         /// </summary>
         private bool isDoubleShot = false;
@@ -211,12 +120,38 @@ namespace ArcSoftFace
         private object chooseImgLocker = new object();
 
         /// <summary>
+        /// RGB视频帧图像使用锁
+        /// </summary>
+        private object rgbVideoImageLocker = new object();
+        /// <summary>
+        /// IR视频帧图像使用锁
+        /// </summary>
+        private object irVideoImageLocker = new object();
+        /// <summary>
+        /// RGB视频帧图像
+        /// </summary>
+        private Bitmap rgbVideoBitmap = null;
+        /// <summary>
+        /// IR视频帧图像
+        /// </summary>
+        private Bitmap irVideoBitmap = null;
+        /// <summary>
         /// RGB 摄像头视频人脸追踪检测结果
         /// </summary>
-        private FaceTrackUnit trackRGBUnit = new FaceTrackUnit();
+        private DictionaryUnit<int,FaceTrackUnit> trackRGBUnitDict = new DictionaryUnit<int, FaceTrackUnit>();
 
         /// <summary>
-        /// IR 视频人脸追踪检测结果
+        /// RGB 特征搜索尝试次数字典
+        /// </summary>
+        private DictionaryUnit<int, int> rgbFeatureTryDict = new DictionaryUnit<int, int>();
+
+        /// <summary>
+        /// RGB 活体检测尝试次数字典
+        /// </summary>
+        private DictionaryUnit<int, int> rgbLivenessTryDict = new DictionaryUnit<int, int>();
+
+        /// <summary>
+        /// IR 视频最大人脸追踪检测结果
         /// </summary>
         private FaceTrackUnit trackIRUnit = new FaceTrackUnit();
 
@@ -226,24 +161,37 @@ namespace ArcSoftFace
         private Font font = new Font(FontFamily.GenericSerif, 10f, FontStyle.Bold);
 
         /// <summary>
-        /// 黄色画笔
+        /// 红色画笔
         /// </summary>
-        private SolidBrush yellowBrush = new SolidBrush(Color.Yellow);
+        private SolidBrush redBrush = new SolidBrush(Color.Red);
 
         /// <summary>
-        /// 蓝色画笔
+        /// 绿色画笔
         /// </summary>
-        private SolidBrush blueBrush = new SolidBrush(Color.Blue);
+        private SolidBrush greenBrush = new SolidBrush(Color.Green);
         
         /// <summary>
-        /// IR视频帧-活体检测/特征比对锁
+        /// 关闭FR线程开关
         /// </summary>
-        private bool isIRLock = false;
+        private bool exitVideoRGBFR = false;
 
         /// <summary>
-        /// IR视频帧检测-引擎锁对象
+        /// 关闭活体线程开关
         /// </summary>
-        private object irLocker = new object();
+        private bool exitVideoRGBLiveness = false;
+        /// <summary>
+        /// 关闭IR活体和FR线程线程开关
+        /// </summary>
+        private bool exitVideoIRFRLiveness = false;
+        /// <summary>
+        /// FR失败重试次数
+        /// </summary>
+        private int frMatchTime = 30;
+
+        /// <summary>
+        /// 活体检测失败重试次数
+        /// </summary>
+        private int liveMatchTime = 30;
         #endregion
         #endregion
 
@@ -275,8 +223,8 @@ namespace ArcSoftFace
                 string sdkKey32 = (string)reader.GetValue("SDKKEY32", typeof(string));
                 rgbCameraIndex = (int)reader.GetValue("RGB_CAMERA_INDEX", typeof(int));
                 irCameraIndex = (int)reader.GetValue("IR_CAMERA_INDEX", typeof(int));
-                frMatchTime= (double)reader.GetValue("FR_MATCH_TIME", typeof(double));
-                liveMatchTime = (double)reader.GetValue("LIVENESS_MATCH_TIME", typeof(double));
+                frMatchTime= (int)reader.GetValue("FR_MATCH_TIME", typeof(int));
+                liveMatchTime = (int)reader.GetValue("LIVENESS_MATCH_TIME", typeof(int));
                 //判断CPU位数
                 var is64CPU = Environment.Is64BitProcess;
                 if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(is64CPU ? sdkKey64 : sdkKey32))
@@ -321,13 +269,13 @@ namespace ArcSoftFace
                 //人脸在图片中所占比例，如果需要调整检测人脸尺寸请修改此值，有效数值为2-32
                 int detectFaceScaleVal = 16;
                 //最大需要检测的人脸个数
-                int detectFaceMaxNum = 5;
+                int detectFaceMaxNum = 15;
                 //引擎初始化时需要初始化的检测功能组合
                 int combinedMask = FaceEngineMask.ASF_FACE_DETECT | FaceEngineMask.ASF_FACERECOGNITION | FaceEngineMask.ASF_AGE | FaceEngineMask.ASF_GENDER | FaceEngineMask.ASF_FACE3DANGLE;
                 //初始化引擎，正常值为0，其他返回值请参考http://ai.arcsoft.com.cn/bbs/forum.php?mod=viewthread&tid=19&_dsign=dbad527e
                 retCode = imageEngine.ASFInitEngine(detectMode, imageDetectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMask);
                 Console.WriteLine("InitEngine Result:" + retCode);
-                AppendText((retCode == 0) ? "引擎初始化成功!" : string.Format("引擎初始化失败!错误码为:{0}", retCode));
+                AppendText((retCode == 0) ? "图片引擎初始化成功!" : string.Format("图片引擎初始化失败!错误码为:{0}", retCode));
                 if (retCode != 0)
                 {
                     //禁用相关功能按钮
@@ -338,16 +286,34 @@ namespace ArcSoftFace
                 DetectionMode detectModeVideo = DetectionMode.ASF_DETECT_MODE_VIDEO;
                 int combinedMaskVideo = FaceEngineMask.ASF_FACE_DETECT | FaceEngineMask.ASF_FACERECOGNITION;
                 retCode = videoEngine.ASFInitEngine(detectModeVideo, videoDetectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMaskVideo);
+                AppendText((retCode == 0) ? "视频引擎初始化成功!" : string.Format("视频引擎初始化失败!错误码为:{0}", retCode));
+                if (retCode != 0)
+                {
+                    //禁用相关功能按钮
+                    ControlsEnable(false, chooseMultiImgBtn, matchBtn, btnClearFaceList, chooseImgBtn);
+                }
 
                 //RGB视频专用FR引擎
                 combinedMask = FaceEngineMask.ASF_FACE_DETECT | FaceEngineMask.ASF_FACERECOGNITION | FaceEngineMask.ASF_LIVENESS;
-                retCode = videoRGBImageEngine.ASFInitEngine(detectMode, imageDetectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMask);
+                retCode = videoRGBImageEngine.ASFInitEngine(detectMode, videoDetectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMask);
+                AppendText((retCode == 0) ? "RGB处理引擎初始化成功!" : string.Format("RGB处理引擎初始化失败!错误码为:{0}", retCode));
+                if (retCode != 0)
+                {
+                    //禁用相关功能按钮
+                    ControlsEnable(false, chooseMultiImgBtn, matchBtn, btnClearFaceList, chooseImgBtn);
+                }
                 //设置活体阈值
                 videoRGBImageEngine.ASFSetLivenessParam(0.5f);
 
                 //IR视频专用FR引擎
                 combinedMask = FaceEngineMask.ASF_FACE_DETECT | FaceEngineMask.ASF_FACERECOGNITION | FaceEngineMask.ASF_IR_LIVENESS;
-                retCode = videoIRImageEngine.ASFInitEngine(detectModeVideo, imageDetectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMask);
+                retCode = videoIRImageEngine.ASFInitEngine(detectModeVideo, videoDetectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMask);
+                AppendText((retCode == 0) ? "IR处理引擎初始化成功!\r\n" : string.Format("IR处理引擎初始化失败!错误码为:{0}\r\n", retCode));
+                if (retCode != 0)
+                {
+                    //禁用相关功能按钮
+                    ControlsEnable(false, chooseMultiImgBtn, matchBtn, btnClearFaceList, chooseImgBtn);
+                }
                 //设置活体阈值
                 videoIRImageEngine.ASFSetLivenessParam(0.5f, 0.7f);
 
@@ -370,7 +336,7 @@ namespace ArcSoftFace
             {
                 filterInfoCollection = new FilterInfoCollection(FilterCategory.VideoInputDevice);
                 //如果没有可用摄像头，“启用摄像头”按钮禁用，否则使可用
-                btnStartVideo.Enabled = !(filterInfoCollection.Count == 0);
+                btnStartVideo.Enabled = filterInfoCollection.Count != 0;
             }
             catch (Exception ex)
             {
@@ -421,7 +387,6 @@ namespace ArcSoftFace
                                     imagePathListTemp.Add(fileNames[i]);
                                 }
                             }
-
                             //人脸检测和剪裁
                             for (int i = 0; i < imagePathListTemp.Count; i++)
                             {
@@ -454,7 +419,7 @@ namespace ArcSoftFace
                                     continue;
                                 }
                                 //人脸检测
-                                MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
+                                MultiFaceInfo multiFaceInfo;
                                 int retCode = imageEngine.ASFDetectFacesEx(image, out multiFaceInfo);
                                 //判断检测结果
                                 if (retCode == 0 && multiFaceInfo.faceNum > 0)
@@ -463,7 +428,6 @@ namespace ArcSoftFace
                                     imagePathList.Add(imagePathListTemp[i]);
                                     MRECT rect = multiFaceInfo.faceRects[0];
                                     image = ImageUtil.CutImage(image, rect.left, rect.top, rect.right, rect.bottom);
-                                    existNewFace = true;
                                 }
                                 else
                                 {
@@ -477,6 +441,7 @@ namespace ArcSoftFace
                                     }
                                     continue;
                                 }
+                                
                                 //显示人脸
                                 this.Invoke(new Action(delegate
                                 {
@@ -487,11 +452,10 @@ namespace ArcSoftFace
                                         CheckImageWidthAndHeight(ref image);
                                     }
                                     imageLists.Images.Add(imagePathListTemp[i], image);
-                                    
                                     imageList.Items.Add((numStart + isGoodImage) + "号", imagePathListTemp[i]);
                                     imageList.Refresh();
                                     AppendText(string.Format("已提取{0}号人脸特征值，[left:{1},right:{2},top:{3},bottom:{4},orient:{5}]", (numStart + isGoodImage), singleFaceInfo.faceRect.left, singleFaceInfo.faceRect.right, singleFaceInfo.faceRect.top, singleFaceInfo.faceRect.bottom, singleFaceInfo.faceOrient));
-                                    imagesFeatureList.Add(feature);
+                                    leftImageFeatureList.Add(feature);
                                     isGoodImage++;
                                     if (image != null)
                                     {
@@ -499,7 +463,6 @@ namespace ArcSoftFace
                                     }
                                 }));
                             }
-
                             //允许点击按钮
                             Invoke(new Action(delegate
                             {
@@ -531,9 +494,9 @@ namespace ArcSoftFace
                 //清除数据
                 imageLists.Images.Clear();
                 imageList.Items.Clear();
-                imagesFeatureList.Clear();
+                leftImageFeatureList.Clear();
                 imagePathList.Clear();
-                existNewFace = true;
+                GC.Collect();
             }
             catch (Exception ex)
             {
@@ -603,7 +566,7 @@ namespace ArcSoftFace
                         srcImage = ImageUtil.ScaleImage(srcImage, srcImage.Width - (srcImage.Width % 4), srcImage.Height);
                     }
                     //人脸检测
-                    MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
+                    MultiFaceInfo multiFaceInfo;
                     int retCode = imageEngine.ASFDetectFacesEx(srcImage, out multiFaceInfo);
                     if (retCode != 0)
                     {
@@ -615,7 +578,7 @@ namespace ArcSoftFace
                     if (multiFaceInfo.faceNum < 1)
                     {
                         srcImage = ImageUtil.ScaleImage(srcImage, picImageCompare.Width, picImageCompare.Height);
-                        image1Feature = new FaceFeature();
+                        rightImageFeatureList.Clear();
                         picImageCompare.Image = srcImage;
                         AppendText(string.Format("{0} - 未检测出人脸!\r\n", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss")));
                         AppendText(string.Format("------------------------------检测结束，时间:{0}------------------------------\r\n", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:ms")));
@@ -633,20 +596,20 @@ namespace ArcSoftFace
                     int retCode_3DAngle = -1;
                     Face3DAngle face3DAngleInfo = FaceUtil.Face3DAngleDetection(imageEngine, srcImage, multiFaceInfo, out retCode_3DAngle);
 
+                    AppendText(string.Format("{0} - 人脸数量:{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), multiFaceInfo.faceNum));
 
-                    MRECT temp = new MRECT();
-                    int ageTemp = 0;
-                    int genderTemp = 0;
-                    int rectTemp = 0;
-                    int maxFaceIndex = 0;
+                    MRECT[] mrectTemp = new MRECT[multiFaceInfo.faceNum];
+                    int[] ageTemp = new int[multiFaceInfo.faceNum];
+                    int[] genderTemp = new int[multiFaceInfo.faceNum];
+                    SingleFaceInfo singleFaceInfo;
 
                     //标记出检测到的人脸
                     for (int i = 0; i < multiFaceInfo.faceNum; i++)
                     {
-                        MRECT rect = multiFaceInfo.faceRects[i]; 
+                        MRECT rect = multiFaceInfo.faceRects[i];
                         int orient = multiFaceInfo.faceOrients[i];
                         int age = 0;
-
+                        //年龄检测
                         if (retCode_Age != 0)
                         {
                             AppendText(string.Format("年龄检测失败，返回{0}!", retCode_Age));
@@ -655,7 +618,7 @@ namespace ArcSoftFace
                         {
                             age = ageInfo.ageArray[i];
                         }
-
+                        //性别检测
                         int gender = -1;
                         if (retCode_Gender != 0)
                         {
@@ -665,7 +628,7 @@ namespace ArcSoftFace
                         {
                             gender = genderInfo.genderArray[i];
                         }
-
+                        //3DAngle检测
                         int face3DStatus = -1;
                         float roll = 0f;
                         float pitch = 0f;
@@ -683,33 +646,19 @@ namespace ArcSoftFace
                             pitch = face3DAngleInfo.pitch[i];
                             yaw = face3DAngleInfo.yaw[i];
                         }
+                        //提取人脸特征
+                        rightImageFeatureList.Add(FaceUtil.ExtractFeature(imageEngine, srcImage, out singleFaceInfo, ref retCode, i));
 
-                        int rectWidth = rect.right - rect.left;
-                        int rectHeight = rect.bottom - rect.top;
-
-                        //查找最大人脸
-                        if (rectWidth * rectHeight > rectTemp)
-                        {
-                            maxFaceIndex = i;
-                            rectTemp = rectWidth * rectHeight;
-                            temp = rect;
-                            ageTemp = age;
-                            genderTemp = gender;
-                        }
-                        AppendText(string.Format("{0} - 人脸坐标:[left:{1},top:{2},right:{3},bottom:{4},orient:{5},roll:{6},pitch:{7},yaw:{8},status:{11}] Age:{9} Gender:{10}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), rect.left, rect.top, rect.right, rect.bottom, orient, roll, pitch, yaw, age, (gender >= 0 ? gender.ToString() : ""), face3DStatus));
+                        mrectTemp[i] = rect;
+                        ageTemp[i] = age;
+                        genderTemp[i] = gender;
+                        AppendText(string.Format("{0} - 第{12}人脸坐标:[left:{1},top:{2},right:{3},bottom:{4},orient:{5},roll:{6},pitch:{7},yaw:{8},status:{11}] Age:{9} Gender:{10}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), rect.left, rect.top, rect.right, rect.bottom, orient, roll, pitch, yaw, age, (gender >= 0 ? gender.ToString() : ""), face3DStatus, i));
                     }
-
-                    AppendText(string.Format("{0} - 人脸数量:{1}", DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"), multiFaceInfo.faceNum));
-
-                    DateTime detectEndTime = DateTime.Now;
-                    AppendText(string.Format("------------------------------检测结束，时间:{0}------------------------------", detectEndTime.ToString("yyyy-MM-dd HH:mm:ss:ms")));
+                    AppendText(string.Format("------------------------------检测结束，时间:{0}------------------------------", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:ms")));
                     AppendText("");
-                    SingleFaceInfo singleFaceInfo = new SingleFaceInfo();
-                    //提取人脸特征
-                    image1Feature = FaceUtil.ExtractFeature(imageEngine, srcImage, out singleFaceInfo, ref retCode, maxFaceIndex);
 
                     //清空上次的匹配结果
-                    for (int i = 0; i < imagesFeatureList.Count; i++)
+                    for (int i = 0; i < leftImageFeatureList.Count; i++)
                     {
                         imageList.Items[i].Text = string.Format("{0}号", i);
                     }
@@ -718,7 +667,7 @@ namespace ArcSoftFace
                     //缩放图片
                     srcImage = ImageUtil.ScaleImage(srcImage, picImageCompare.Width, picImageCompare.Height);
                     //添加标记
-                    srcImage = ImageUtil.MarkRectAndString(srcImage, (int)(temp.left * scaleRate), (int)(temp.top * scaleRate), (int)(temp.right * scaleRate) - (int)(temp.left * scaleRate), (int)(temp.bottom * scaleRate) - (int)(temp.top * scaleRate), ageTemp, genderTemp, picImageCompare.Width);
+                    srcImage = ImageUtil.MarkRectAndString(srcImage, mrectTemp, ageTemp, genderTemp, picImageCompare.Width, scaleRate, multiFaceInfo.faceNum);
 
                     //显示标记后的图像
                     picImageCompare.Image = srcImage;
@@ -741,13 +690,13 @@ namespace ArcSoftFace
         {
             try
             {
-                if (imagesFeatureList.Count == 0)
+                if (leftImageFeatureList.Count == 0)
                 {
                     MessageBox.Show("请注册人脸!", "提示", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return;
                 }
 
-                if (image1Feature == null || image1Feature.featureSize <= 0)
+                if (rightImageFeatureList == null || rightImageFeatureList.Count <= 0)
                 {
                     if (picImageCompare.Image == null)
                     {
@@ -761,30 +710,39 @@ namespace ArcSoftFace
                 }
                 //标记已经做了匹配比对，在开启视频的时候要清除比对结果
                 isCompare = true;
-                float compareSimilarity = 0f;
-                int compareNum = 0;
                 AppendText(string.Format("------------------------------开始比对，时间:{0}------------------------------", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:ms")));
-                for (int i = 0; i < imagesFeatureList.Count; i++)
+                for (int faceIndex = 0; faceIndex < rightImageFeatureList.Count; faceIndex++)
                 {
-                    FaceFeature feature = imagesFeatureList[i];
-                    float similarity = 0f;
-                    imageEngine.ASFFaceFeatureCompare(image1Feature, feature, out similarity);
-                    //增加异常值处理
-                    if (similarity.ToString().IndexOf("E") > -1)
+                    float compareSimilarity = 0f;
+                    int compareNum = 0;
+                    FaceFeature tempFaceFeature = rightImageFeatureList[faceIndex];
+                    if (tempFaceFeature.featureSize <= 0)
                     {
-                        similarity = 0f;
+                        AppendText(string.Format("比对人脸第{0}张人脸特征提取失败", faceIndex));
+                        continue;
                     }
-                    AppendText(string.Format("与{0}号比对结果:{1}", i, similarity));
-                    imageList.Items[i].Text = string.Format("{0}号({1})", i, similarity);
-                    if (similarity > compareSimilarity)
+                    AppendText(string.Format("---------开始匹配比对人脸第{0}张人脸---------", faceIndex));
+                    for (int i = 0; i < leftImageFeatureList.Count; i++)
                     {
-                        compareSimilarity = similarity;
-                        compareNum = i;
+                        FaceFeature feature = leftImageFeatureList[i];
+                        float similarity = 0f;
+                        imageEngine.ASFFaceFeatureCompare(tempFaceFeature, feature, out similarity);
+                        //增加异常值处理
+                        if (similarity.ToString().IndexOf("E") > -1)
+                        {
+                            similarity = 0f;
+                        }
+                        AppendText(string.Format("与人脸库{0}号比对结果:{1}", i, similarity));
+                        if (similarity > compareSimilarity)
+                        {
+                            compareSimilarity = similarity;
+                            compareNum = i;
+                        }
                     }
-                }
-                if (compareSimilarity > 0)
-                {
-                    lblCompareInfo.Text = " " + compareNum + "号," + compareSimilarity;
+                    if (compareSimilarity > 0)
+                    {
+                        AppendText(string.Format("匹配结果:{0}号,比对结果:{1}", compareNum, compareSimilarity));
+                    }
                 }
                 AppendText(string.Format("------------------------------比对结束，时间:{0}------------------------------", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:ms")));
             }
@@ -833,13 +791,14 @@ namespace ArcSoftFace
                     txtThreshold.Enabled = false;
                     exitVideoRGBFR = true;
                     exitVideoRGBLiveness = true;
+                    exitVideoIRFRLiveness = true;
                 }
                 else
                 {
                     if (isCompare)
                     {
                         //比对结果清除
-                        for (int i = 0; i < imagesFeatureList.Count; i++)
+                        for (int i = 0; i < leftImageFeatureList.Count; i++)
                         {
                             imageList.Items[i].Text = string.Format("{0}号", i);
                         }
@@ -868,6 +827,9 @@ namespace ArcSoftFace
                         irVideoSource.Start();
                         //双摄标志设为true
                         isDoubleShot = true;
+                        //启动检测线程
+                        exitVideoIRFRLiveness = false;
+                        videoIRLiveness();
                     }
                     else
                     {
@@ -899,60 +861,107 @@ namespace ArcSoftFace
         {
             try
             {
-                if (rgbVideoSource.IsRunning)
+                if (!rgbVideoSource.IsRunning)
                 {
-                    ableReadFaceInfo = false;
-                    //得到当前RGB摄像头下的图片
-                    Bitmap bitmap = rgbVideoSource.GetCurrentVideoFrame();
-                    if (bitmap == null)
+                    return;
+                }
+                //得到当前RGB摄像头下的图片
+                lock (rgbVideoImageLocker)
+                {
+                    rgbVideoBitmap = rgbVideoSource.GetCurrentVideoFrame();
+                }
+                Bitmap bitmapClone = null;
+                try
+                {
+                    lock (rgbVideoImageLocker)
+                    {
+                        if (rgbVideoBitmap == null)
+                        {
+                            return;
+                        }
+                        bitmapClone = (Bitmap)rgbVideoBitmap.Clone();
+                    }
+                    if(bitmapClone == null)
                     {
                         return;
                     }
                     //检测人脸，得到Rect框
-                    multiFaceInfo = FaceUtil.DetectFace(videoEngine, bitmap);
-                    //得到最大人脸
-                    maxFace = FaceUtil.GetMaxFace(multiFaceInfo);
-                    //得到Rect
-                    rect = maxFace.faceRect;
-                    Bitmap bitmaptemp = bitmap;
-                    ableReadFaceInfo = true;
-                    //检测RGB摄像头下最大人脸
+                    MultiFaceInfo multiFaceInfo = FaceUtil.DetectFace(videoEngine, bitmapClone);
+                    //未检测到人脸
+                    if (multiFaceInfo.faceNum <= 0)
+                    {
+                        trackRGBUnitDict.ClearAllElement();
+                        return;
+                    }
                     Graphics g = e.Graphics;
-                    float offsetX = rgbVideoSource.Width * 1f / bitmaptemp.Width;
-                    float offsetY = rgbVideoSource.Height * 1f / bitmaptemp.Height;
-                    float x = rect.left * offsetX;
-                    float width = rect.right * offsetX - x;
-                    float y = rect.top * offsetY;
-                    float height = rect.bottom * offsetY - y;
-                    //根据Rect进行画框
-                    g.DrawRectangle(Pens.Red, x, y, width, height);
-                    if (ableReadFR && ableReadLiveess)
+                    float offsetX = rgbVideoSource.Width * 1f / bitmapClone.Width;
+                    float offsetY = rgbVideoSource.Height * 1f / bitmapClone.Height;
+                    List<int> tempIdList = new List<int>();
+                    for (int faceIndex = 0; faceIndex < multiFaceInfo.faceNum; faceIndex++)
                     {
-                        ableReadFaceInfo = false;
-                        if (!string.IsNullOrEmpty(trackRGBUnit.message) && x > 0 && y > 0 && !retCodeLiveness.Equals(livenessInitValue))
+                        MRECT mrect = multiFaceInfo.faceRects[faceIndex];
+                        float x = mrect.left * offsetX;
+                        float width = mrect.right * offsetX - x;
+                        float y = mrect.top * offsetY;
+                        float height = mrect.bottom * offsetY - y;
+                        int faceId = multiFaceInfo.faceID[faceIndex];
+                        FaceTrackUnit currentFaceTrack = trackRGBUnitDict.GetElementByKey(faceId);
+                        //根据Rect进行画框
+                        //将上一帧检测结果显示到页面上
+                        lock (rgbVideoImageLocker)
                         {
-                            //将上一帧检测结果显示到页面上
-                            g.DrawString(trackRGBUnit.message, font, trackRGBUnit.liveness.Equals(1) ? blueBrush : yellowBrush, x, y - 15);
+                            if (currentFaceTrack != null)
+                            {
+                                g.DrawRectangle(currentFaceTrack.CertifySuccess() ? Pens.Green : Pens.Red, x, y, width, height);
+                                if (!string.IsNullOrWhiteSpace(currentFaceTrack.GetCombineMessage()) && x > 0 && y > 0)
+                                {
+                                    g.DrawString(currentFaceTrack.GetCombineMessage(), font, currentFaceTrack.CertifySuccess() ? greenBrush : redBrush, x, y - 15);
+                                }
+                            }
+                            else
+                            {
+                                g.DrawRectangle(Pens.Red, x, y, width, height);
+                            }
                         }
-                        ableReadFaceInfo = true;
-                    }
-                    //判断faceId是否相同 如果相同，不必重复进行活体检测和特征比对
-                    if (faceIDTemp.Equals(faceIdTempInitValue) || !faceIDTemp.Equals(maxFace.faceID)|| livenessResult.Equals(livenessInitValue))
-                    {
-                        if (!faceIDTemp.Equals(faceIdTempInitValue))
+                        if (faceId >= 0)
                         {
-                            handleQueue.Remove(faceIDTemp);
+                            //判断faceid是否加入待处理队列
+                            if (!rgbFeatureTryDict.ContainsKey(faceId))
+                            {
+                                rgbFeatureTryDict.AddDictionaryElement(faceId, 0);
+                            }
+                            if (!rgbLivenessTryDict.ContainsKey(faceId))
+                            {
+                                rgbLivenessTryDict.AddDictionaryElement(faceId, 0);
+                            }
+                            if (trackRGBUnitDict.ContainsKey(faceId))
+                            {
+                                trackRGBUnitDict.GetElementByKey(faceId).Rect = mrect;
+                                trackRGBUnitDict.GetElementByKey(faceId).FaceOrient = multiFaceInfo.faceOrients[faceIndex];
+                            }
+                            else
+                            {
+                                trackRGBUnitDict.AddDictionaryElement(faceId, new FaceTrackUnit(faceId, mrect, multiFaceInfo.faceOrients[faceIndex]));
+                            }
+                            tempIdList.Add(faceId);
                         }
-                        livenessResult = livenessInitValue;
-                        faceIDTemp = maxFace.faceID;
-                        handleQueue.Add(faceIDTemp);
-                        existNewFace = true;
+                        
                     }
-                    else
+                    //初始化及刷新待处理队列,移除出框的人脸
+                    rgbFeatureTryDict.RefershElements(tempIdList);
+                    rgbLivenessTryDict.RefershElements(tempIdList);
+                    trackRGBUnitDict.RefershElements(tempIdList);
+                }
+                catch (Exception ee)
+                {
+                    LogUtil.LogInfo(GetType(), ee);
+                }
+                finally
+                {
+                    if (bitmapClone != null)
                     {
-                        existNewFace = false;
+                        bitmapClone.Dispose();
                     }
-
                 }
             }
             catch (Exception ex)
@@ -966,129 +975,204 @@ namespace ArcSoftFace
         /// </summary>
         private void videoRGBLiveness()
         {
-            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate {
+            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+            {
                 while (true)
                 {
                     if (exitVideoRGBLiveness)
                     {
                         return;
                     }
-                    if (handleQueue.Contains(faceIDTemp) && existNewFace && ableReadFaceInfo)
+                    if (rgbLivenessTryDict.GetDictCount() <= 0)
                     {
-                        ableReadLiveess = false;
-                        if (rect.left != 0 && rect.right != 0 && rect.top != 0 && rect.bottom != 0 )
+                        continue;
+                    }
+                    try
+                    {
+                        if (rgbVideoBitmap == null)
                         {
+                            continue;
+                        }
+                        List<int> faceIdList = new List<int>();
+                        faceIdList.AddRange(rgbLivenessTryDict.GetAllElement().Keys);
+                        //遍历人脸Id，进行活体检测
+                        foreach (int tempFaceId in faceIdList)
+                        {
+                            //待处理队列中不存在，移除
+                            if (!rgbLivenessTryDict.ContainsKey(tempFaceId))
+                            {
+                                continue;
+                            }
+                            //大于尝试次数，移除
+                            int tryTime = rgbLivenessTryDict.GetElementByKey(tempFaceId);
+                            if (tryTime >= liveMatchTime)
+                            {
+                                continue;
+                            }
+                            tryTime += 1;
+                            //无对应的人脸框信息
+                            if (!trackRGBUnitDict.ContainsKey(tempFaceId))
+                            {
+                                continue;
+                            }
+                            FaceTrackUnit tempFaceTrack = trackRGBUnitDict.GetElementByKey(tempFaceId);
+
+                            //RGB活体检测
+                            Console.WriteLine(string.Format("faceId:{0},活体检测第{1}次\r\n", tempFaceId, tryTime));
+                            SingleFaceInfo singleFaceInfo = new SingleFaceInfo();
+                            singleFaceInfo.faceID = tempFaceId;
+                            singleFaceInfo.faceOrient = tempFaceTrack.FaceOrient;
+                            singleFaceInfo.faceRect = tempFaceTrack.Rect;
+                            Bitmap bitmapClone = null;
                             try
                             {
-                                LivenessInfo liveInfo = new LivenessInfo();
-                                //RGB活体检测
-                                for (int i = 0; i < liveMatchTime; i++)
+                                lock (rgbVideoImageLocker)
                                 {
-                                    if (exitVideoRGBLiveness)
+                                    if (rgbVideoBitmap == null)
                                     {
                                         break;
                                     }
-                                    Console.WriteLine(string.Format("faceid:{0},活体检测第{1}次\r\n", faceIDTemp,i+1));
-                                    Bitmap bitmapTempL = rgbVideoSource.GetCurrentVideoFrame();
-                                    if (bitmapTempL == null)
+                                    bitmapClone = (Bitmap)rgbVideoBitmap.Clone();
+                                }
+                                int retCodeLiveness = -1;
+                                LivenessInfo liveInfo = FaceUtil.LivenessInfo_RGB(videoRGBImageEngine, bitmapClone, singleFaceInfo, out retCodeLiveness);
+                                //更新活体检测结果
+                                if (retCodeLiveness.Equals(0) && liveInfo.num > 0 && trackRGBUnitDict.ContainsKey(tempFaceId))
+                                {
+                                    trackRGBUnitDict.GetElementByKey(tempFaceId).RgbLiveness = liveInfo.isLive[0];
+                                    if (liveInfo.isLive[0].Equals(1))
                                     {
-                                        break;
-                                    }
-                                    liveInfo = FaceUtil.LivenessInfo_RGB(videoRGBImageEngine, bitmapTempL, maxFace, out retCodeLiveness);
-                                    if (liveInfo.num > 0 && retCodeLiveness.Equals(0) && liveInfo.isLive[0].Equals(1))
-                                    {
-                                        liveInfo.isLive[0] = -1;
-                                        livenessResult = 1;
-                                        break;
-                                    }
-                                    else if (liveInfo.num > 0 && retCodeLiveness.Equals(0) && !liveInfo.isLive[0].Equals(1))
-                                    {
-                                        livenessResult = liveInfo.isLive[0];
+                                        tryTime = liveMatchTime;
                                     }
                                 }
-                                trackRGBUnit.liveness = livenessResult;
-                                ableReadLiveess = true;
                             }
-                            catch (Exception ex)
+                            catch (Exception ee)
                             {
-                                Console.WriteLine(ex.Message);
+                                LogUtil.LogInfo(GetType(), ee);
                             }
+                            finally
+                            {
+                                if (bitmapClone != null)
+                                {
+                                    bitmapClone.Dispose();
+                                }
+                            }
+                            rgbLivenessTryDict.UpdateDictionaryElement(tempFaceId, tryTime);
                         }
+                        
+                    }
+                    catch (Exception ex)
+                    {
+                        LogUtil.LogInfo(GetType(), ex);
                     }
                 }
-
             }));
         }
 
         /// <summary>
-        /// 特征提取线程
+        /// 特征提取和搜索线程
         /// </summary>
         private void videoRGBFR()
         {
-            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate {
+            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+            {
                 while (true)
                 {
                     if (exitVideoRGBFR)
                     {
                         return;
                     }
+                    if (rgbFeatureTryDict.GetDictCount() <= 0)
+                    {
+                        continue;
+                    }
+                    //左侧人脸库为空时，不用进行特征搜索
+                    if (leftImageFeatureList.Count <= 0)
+                    {
+                        continue;
+                    }
                     try
                     {
-                        if (ableReadFaceInfo && existNewFace && handleQueue.Contains(faceIDTemp) && !livenessResult.Equals(livenessInitValue))
+                        if (rgbVideoBitmap == null)
                         {
-                            ableReadFR = false;
-                            if (livenessResult.Equals(1) && rect.left != 0 && rect.right != 0 && rect.top != 0 && rect.bottom != 0)
+                            continue;
+                        }
+                        List<int> faceIdList = new List<int>();
+                        faceIdList.AddRange(rgbFeatureTryDict.GetAllElement().Keys);
+                        foreach (int tempFaceId in faceIdList)
+                        {
+                            //待处理队列中不存在，移除
+                            if (!rgbFeatureTryDict.ContainsKey(tempFaceId))
                             {
-                                int result = -1;
-                                float similarity = 0f;
-                                for (int i = 0; i < frMatchTime; i++)
-                                {
-                                    if (exitVideoRGBFR)
-                                    {
-                                        break;
-                                    }
-                                    Console.WriteLine(string.Format("faceid:{0},特征搜索第{1}次\r\n", faceIDTemp, i+1));
-                                    Bitmap bitmapTemp = rgbVideoSource.GetCurrentVideoFrame();
-                                    if (bitmapTemp == null)
-                                    {
-                                        break;
-                                    }
-                                    //提取人脸特征
-                                    FaceFeature feature = FaceUtil.ExtractFeature(videoRGBImageEngine, bitmapTemp, maxFace);
-                                    similarity = 0f;
-                                    result = compareFeature(feature, out similarity);
-                                    //得到比对结果
-                                    if (result > -1)
-                                    {
-                                        break;
-                                    }
-                                }
-                                if (!result.Equals(-1))
-                                {
-                                    //将比对结果放到显示消息中，用于最新显示
-                                    trackRGBUnit.message = string.Format(" {0}号 {1},{2},Faceid:{3}", result, similarity, string.Format("RGB{0}", CommonUtil.TransLivenessResult(livenessResult)), faceIDTemp);
-                                }
-                                else
-                                {
-                                    //显示消息
-                                    trackRGBUnit.message = string.Format("RGB{0},Faceid:{1}", CommonUtil.TransLivenessResult(livenessResult), faceIDTemp);
-                                }
-
+                                continue;
                             }
-                            else
+                            //大于尝试次数，移除
+                            int tryTime = rgbFeatureTryDict.GetElementByKey(tempFaceId);
+                            if (tryTime >= frMatchTime)
                             {
-                                //显示消息
-                                trackRGBUnit.message = string.Format("RGB{0},Faceid:{1}", CommonUtil.TransLivenessResult(livenessResult), faceIDTemp);
+                                continue;
                             }
+                            //无对应的人脸框信息
+                            if (!trackRGBUnitDict.ContainsKey(tempFaceId))
+                            {
+                                continue;
+                            }
+                            FaceTrackUnit tempFaceTrack = trackRGBUnitDict.GetElementByKey(tempFaceId);
+                            tryTime += 1;
+                            //特征搜索
+                            int faceIndex = -1;
+                            float similarity = 0f;
+                            Console.WriteLine(string.Format("faceId:{0},特征搜索第{1}次\r\n", tempFaceId, tryTime));
+                            //提取人脸特征
+                            SingleFaceInfo singleFaceInfo = new SingleFaceInfo();
+                            singleFaceInfo.faceID = tempFaceId;
+                            singleFaceInfo.faceOrient = tempFaceTrack.FaceOrient;
+                            singleFaceInfo.faceRect = tempFaceTrack.Rect;
+                            Bitmap bitmapClone = null;
+                            try
+                            {
+                                lock (rgbVideoImageLocker)
+                                {
+                                    if (rgbVideoBitmap == null)
+                                    {
+                                        break;
+                                    }
+                                    bitmapClone = (Bitmap)rgbVideoBitmap.Clone();
+                                }
+                                FaceFeature feature = FaceUtil.ExtractFeature(videoRGBImageEngine, bitmapClone, singleFaceInfo);
+                                if (feature.featureSize <= 0)
+                                {
+                                    break;
+                                }
+                                //特征搜索
+                                faceIndex = compareFeature(feature, out similarity);
+                                //更新比对结果
+                                if (trackRGBUnitDict.ContainsKey(tempFaceId))
+                                {
+                                    trackRGBUnitDict.GetElementByKey(tempFaceId).SetFaceIndexAndSimilarity(faceIndex, similarity.ToString("#0.00"));
+                                    if (faceIndex > -1)
+                                    {
+                                        tryTime = frMatchTime;
+                                    }
+                                }
+                            }
+                            catch (Exception ee)
+                            {
+                                LogUtil.LogInfo(GetType(), ee);
+                            }
+                            finally
+                            {
+                                if (bitmapClone != null)
+                                {
+                                    bitmapClone.Dispose();
+                                }
+                            }
+                            rgbFeatureTryDict.UpdateDictionaryElement(tempFaceId, tryTime);
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
-                    }
-                    finally
-                    {
-                        ableReadFR = true;
+                        LogUtil.LogInfo(GetType(), ex);
                     }
                 }
             }));
@@ -1103,20 +1187,37 @@ namespace ArcSoftFace
         {
             try
             {
-                if (isDoubleShot && irVideoSource.IsRunning)
+                if (!isDoubleShot || !irVideoSource.IsRunning)
                 {
-                    //如果双摄，且IR摄像头工作，获取IR摄像头图片
-                    Bitmap irBitmap = irVideoSource.GetCurrentVideoFrame();
-                    //校验图片宽高
-                    CheckBitmapWidthAndHeight(ref irBitmap);
-                    if (irBitmap == null)
+                    return;
+                }
+                //如果双摄，且IR摄像头工作，获取IR摄像头图片
+                lock (irVideoImageLocker)
+                {
+                    irVideoBitmap = irVideoSource.GetCurrentVideoFrame();
+                }
+                Bitmap irBmpClone = null;
+                try
+                {
+                    lock (irVideoImageLocker)
+                    {
+                        if (irVideoBitmap == null)
+                        {
+                            return;
+                        }
+                        irBmpClone = (Bitmap)irVideoBitmap.Clone();
+                    }
+                    if (irBmpClone == null)
                     {
                         return;
                     }
+                    //校验图片宽高
+                    CheckBitmapWidthAndHeight(ref irBmpClone);
                     //检测人脸，得到Rect框
-                    MultiFaceInfo multiFaceInfo = FaceUtil.DetectFaceIR(videoIRImageEngine, irBitmap);
+                    MultiFaceInfo multiFaceInfo = FaceUtil.DetectFaceIR(videoIRImageEngine, irBmpClone);
                     if (multiFaceInfo.faceNum <= 0)
                     {
+                        trackIRUnit.FaceId = -1;
                         return;
                     }
                     //得到最大人脸
@@ -1125,77 +1226,35 @@ namespace ArcSoftFace
                     MRECT rect = irMaxFace.faceRect;
                     //检测RGB摄像头下最大人脸
                     Graphics g = e.Graphics;
-                    float offsetX = irVideoSource.Width * 1f / irBitmap.Width;
-                    float offsetY = irVideoSource.Height * 1f / irBitmap.Height;
+                    float offsetX = irVideoSource.Width * 1f / irBmpClone.Width;
+                    float offsetY = irVideoSource.Height * 1f / irBmpClone.Height;
                     float x = rect.left * offsetX;
                     float width = rect.right * offsetX - x;
                     float y = rect.top * offsetY;
                     float height = rect.bottom * offsetY - y;
                     //根据Rect进行画框
-                    g.DrawRectangle(Pens.Red, x, y, width, height);
-                    if (!string.Empty.Equals(trackIRUnit.message) && x > 0 && y > 0)
+                    lock (irVideoImageLocker)
                     {
-                        //将上一帧检测结果显示到页面上
-                        g.DrawString(trackIRUnit.message, font, trackIRUnit.liveness.Equals(1) ? blueBrush : yellowBrush, x, y - 15);
-                    }
-                    //判断faceId是否相同 如果相同，不必重复进行活体检测和特征比对
-                    if (irMaxFace.faceID > 0 && irMaxFace.faceID.Equals(irTempFaceId))
-                    {
-                        return;
-                    }
-
-                    //保证只检测一帧，防止页面卡顿以及出现其他内存被占用情况
-                    if (!isIRLock)
-                    {
-                        isIRLock = true;
-                        //异步处理活体检测，不然页面会比较卡
-                        ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+                        g.DrawRectangle(trackIRUnit.IrLiveness.Equals(1) ? Pens.Green : Pens.Red, x, y, width, height);
+                        if (!string.IsNullOrWhiteSpace(trackIRUnit.GetIrLivenessMessage()) && x > 0 && y > 0)
                         {
-                            int livenessResult = -1;
-                            if (rect.left != 0 && rect.right != 0 && rect.top != 0 && rect.bottom != 0)
-                            {
-                                try
-                                {
-                                    //得到当前摄像头下的图片
-                                    if (irBitmap != null)
-                                    {
-                                        int retCode_Liveness = -1;
-
-                                        //IR活体检测
-                                        LivenessInfo liveInfo = FaceUtil.LivenessInfo_IR(videoIRImageEngine, irBitmap, irMaxFace, out retCode_Liveness);
-                                        //判断检测结果
-                                        if (retCode_Liveness == 0 && liveInfo.num > 0)
-                                        {
-                                            livenessResult = liveInfo.isLive[0];
-                                            //如果是活体 则记录faceid 下次相同的人脸不用进行比对
-                                            if (livenessResult.Equals(1))
-                                            {
-                                                irTempFaceId = irMaxFace.faceID;
-                                            }
-                                        }
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine(ex.Message);
-                                }
-                                finally
-                                {
-                                    trackIRUnit.message = string.Format("IR{0}", CommonUtil.TransLivenessResult(livenessResult));
-                                    if (irBitmap != null)
-                                    {
-                                        irBitmap.Dispose();
-                                    }
-                                    isIRLock = false;
-                                }
-                            }
-                            else
-                            {
-                                trackIRUnit.message = string.Empty;
-                            }
-                            trackIRUnit.liveness = livenessResult;
-                            isIRLock = false;
-                        }));
+                            //将上一帧检测结果显示到页面上
+                            g.DrawString(trackIRUnit.GetIrLivenessMessage(), font, trackIRUnit.IrLiveness.Equals(1) ? greenBrush : redBrush, x, y - 15);
+                        }
+                    }
+                    trackIRUnit.Rect = irMaxFace.faceRect;
+                    trackIRUnit.FaceId = irMaxFace.faceID;
+                    trackIRUnit.FaceOrient = irMaxFace.faceOrient;
+                }
+                catch (Exception ee)
+                {
+                    LogUtil.LogInfo(GetType(), ee);
+                }
+                finally
+                {
+                    if (irBmpClone != null)
+                    {
+                        irBmpClone.Dispose();
                     }
                 }
             }
@@ -1203,6 +1262,67 @@ namespace ArcSoftFace
             {
                 LogUtil.LogInfo(GetType(), ex);
             }
+        }
+
+        /// <summary>
+        /// IR活体检测线程
+        /// </summary>
+        private void videoIRLiveness()
+        {
+            ThreadPool.QueueUserWorkItem(new WaitCallback(delegate
+            {
+                while (true)
+                {
+                    if (exitVideoIRFRLiveness)
+                    {
+                        return;
+                    }
+                    try
+                    {                        
+                        Bitmap bitmapClone = null;
+                        try
+                        {
+                            lock (irVideoImageLocker)
+                            {
+                                if (irVideoBitmap == null)
+                                {
+                                    continue;
+                                }
+                                bitmapClone = (Bitmap)irVideoBitmap.Clone();
+                                if (bitmapClone == null)
+                                {
+                                    continue;
+                                }
+                            }
+                            SingleFaceInfo singleFaceInfo = new SingleFaceInfo();
+                            singleFaceInfo.faceID = trackIRUnit.FaceId;
+                            singleFaceInfo.faceOrient = trackIRUnit.FaceOrient;
+                            singleFaceInfo.faceRect = trackIRUnit.Rect;
+                            int retCodeLiveness = -1;
+                            LivenessInfo liveInfo = FaceUtil.LivenessInfo_IR(videoIRImageEngine, bitmapClone, singleFaceInfo, out retCodeLiveness);
+                            if (retCodeLiveness.Equals(0) && liveInfo.num > 0)
+                            {
+                                trackIRUnit.IrLiveness = liveInfo.isLive[0];
+                            }
+                        }
+                        catch (Exception ee)
+                        {
+                            LogUtil.LogInfo(GetType(), ee);
+                        }
+                        finally
+                        {
+                            if (bitmapClone != null)
+                            {
+                                bitmapClone.Dispose();
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        LogUtil.LogInfo(GetType(), ex);
+                    }
+                }
+            }));
         }
 
         /// <summary>
@@ -1217,12 +1337,12 @@ namespace ArcSoftFace
             try
             {
                 //如果人脸库不为空，则进行人脸匹配
-                if (imagesFeatureList != null && imagesFeatureList.Count > 0)
+                if (leftImageFeatureList != null && leftImageFeatureList.Count > 0)
                 {
-                    for (int i = 0; i < imagesFeatureList.Count; i++)
+                    for (int i = 0; i < leftImageFeatureList.Count; i++)
                     {
                         //调用人脸匹配方法，进行匹配
-                        videoRGBImageEngine.ASFFaceFeatureCompare(feature, imagesFeatureList[i], out similarity);
+                        videoRGBImageEngine.ASFFaceFeatureCompare(feature, leftImageFeatureList[i], out similarity);
                         if (similarity >= threshold)
                         {
                             result = i;
@@ -1251,6 +1371,7 @@ namespace ArcSoftFace
                 ControlsEnable(true, chooseImgBtn, matchBtn, chooseMultiImgBtn, btnClearFaceList);
                 exitVideoRGBFR = true;
                 exitVideoRGBLiveness = true;
+                exitVideoIRFRLiveness = true;
             }
             catch (Exception ex)
             {
@@ -1324,16 +1445,6 @@ namespace ArcSoftFace
             }
         }
 
-        /// <summary>
-        /// 修改阈值，重新检测
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void txtThreshold_TextChanged(object sender, EventArgs e)
-        {
-            existNewFace = true;
-        }
-
         #endregion
 
         #region 窗体关闭
@@ -1402,7 +1513,7 @@ namespace ArcSoftFace
                     Image image = ImageUtil.ReadFromFile(imagePath);
                     if (image == null)
                     {
-                        throw new Exception();
+                        throw new ArgumentException(" image is null");
                     }
                     else
                     {

@@ -5,7 +5,7 @@ namespace ArcSoftFace.Utils
     /// <summary>
     /// Log工具类
     /// </summary>
-    public class LogUtil
+    public static class LogUtil
     {
         /// <summary>
         /// loginfo

@@ -7,7 +7,7 @@ namespace ArcFaceSDK.Utils
     /// <summary>
     /// SDK接口
     /// </summary>
-    public class ASFFunctions
+    public static class ASFFunctions
     {
         /// <summary>
         /// SDK动态链接库路径

@@ -2,23 +2,22 @@
 using ArcFaceSDK.Entity;
 using ArcFaceSDK.SDKModels;
 using System;
-using System.Runtime.InteropServices;
 
 namespace ArcFaceSDK.Utils
 {
     /// <summary>
     /// 公用方法
     /// </summary>
-    public class CommonUtil
+    public static class CommonUtil
     {
         /// <summary>
         /// 转化活体检测结果
         /// </summary>
         /// <param name="liveness">活体检测值</param>
         /// <returns></returns>
-        public  static string TransLivenessResult(int liveness)
+        public static string TransLivenessResult(int liveness)
         {
-            string rel = "不确定";
+            string rel;
             switch (liveness)
             {
                 case 0: rel = "非真人"; break;
@@ -27,7 +26,6 @@ namespace ArcFaceSDK.Utils
                 case -3: rel = "人脸过小"; break;
                 case -4: rel = "角度过大"; break;
                 case -5: rel = "人脸超出边界"; break;
-                case -1:
                 default:
                     rel = "不确定"; break;
             }

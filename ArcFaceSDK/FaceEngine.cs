@@ -60,7 +60,6 @@ namespace ArcFaceSDK
         public int ASFInitEngine(DetectionMode detectMode, ASF_OrientPriority detectFaceOrientPriority, int detectFaceScaleVal, int detectFaceMaxNum, int combinedMask)
         {
             pEngine = IntPtr.Zero;
-            int retCode = -1;
             if (detectFaceScaleVal < 2 || detectFaceScaleVal > 32)
             {
                 detectFaceScaleVal = 16;
@@ -69,7 +68,7 @@ namespace ArcFaceSDK
             {
                 detectFaceMaxNum = 10;
             }
-            retCode = ASFFunctions.ASFInitEngine(detectMode, detectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMask, ref pEngine);
+            int retCode = ASFFunctions.ASFInitEngine(detectMode, detectFaceOrientPriority, detectFaceScaleVal, detectFaceMaxNum, combinedMask, ref pEngine);
             return retCode;
         }
 
@@ -83,31 +82,28 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFDetectFaces(Image image, out MultiFaceInfo multiFaceInfo, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8, ASF_DetectModel detectModel = ASF_DetectModel.ASF_DETECT_MODEL_RGB)
         {
-            int retCode = -1;
             multiFaceInfo = new MultiFaceInfo();
             //判断图像是否为空
             if (image == null)
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
 
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
             }
 
-            ASF_MultiFaceInfo multiFaceInfoStruct = new ASF_MultiFaceInfo();
             IntPtr pMultiFaceInfo = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_MultiFaceInfo>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFDetectFaces(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pMultiFaceInfo);
+            int retCode = ASFFunctions.ASFDetectFaces(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pMultiFaceInfo);
             if (retCode != 0)
             {
                 MemoryUtil.FreeArray(imageInfo.imgData, pMultiFaceInfo);
                 return retCode;
             }
-            multiFaceInfoStruct = MemoryUtil.PtrToStructure<ASF_MultiFaceInfo>(pMultiFaceInfo);
+            ASF_MultiFaceInfo multiFaceInfoStruct = MemoryUtil.PtrToStructure<ASF_MultiFaceInfo>(pMultiFaceInfo);
             MemoryUtil.FreeArray(imageInfo.imgData, pMultiFaceInfo);
 
             //转化非托管内存到托管内存
@@ -140,7 +136,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFProcess(Image image, MultiFaceInfo multiFaceInfo, int combinedMask, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8)
         {
-            int retCode = -1;
             if (multiFaceInfo == null)
             {
                 return ErrorCodeUtil.MULPTIFACEINFO_IS_NULL;
@@ -149,8 +144,7 @@ namespace ArcFaceSDK
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
@@ -180,7 +174,7 @@ namespace ArcFaceSDK
 
             MemoryUtil.StructureToPtr(multiFaceInfoStruct, pMultiFaceInfo);
             //调用SDK接口
-            retCode = ASFFunctions.ASFProcess(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pMultiFaceInfo, combinedMask);
+            int retCode = ASFFunctions.ASFProcess(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pMultiFaceInfo, combinedMask);
             //释放内存
             MemoryUtil.FreeArray(imageInfo.imgData, multiFaceInfoStruct.faceID, multiFaceInfoStruct.faceOrients, multiFaceInfoStruct.faceRects, pMultiFaceInfo);
             return retCode;
@@ -197,7 +191,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFFaceFeatureExtract(Image image, MultiFaceInfo multiFaceInfo, out FaceFeature faceFeature, int faceIndex = 0, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8)
         {
-            int retCode = -1;
             faceFeature = new FaceFeature();
             if (multiFaceInfo == null)
             {
@@ -211,8 +204,7 @@ namespace ArcFaceSDK
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
@@ -225,7 +217,7 @@ namespace ArcFaceSDK
             MemoryUtil.StructureToPtr(singleFaceInfo, pSIngleFaceInfo);
             IntPtr pAsfFaceFeature = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_FaceFeature>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFFaceFeatureExtract(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pSIngleFaceInfo, pAsfFaceFeature);
+            int retCode = ASFFunctions.ASFFaceFeatureExtract(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pSIngleFaceInfo, pAsfFaceFeature);
             if (retCode != 0)
             {
                 MemoryUtil.FreeArray(pSIngleFaceInfo, pAsfFaceFeature, imageInfo.imgData);
@@ -251,7 +243,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFFaceFeatureCompare(FaceFeature faceFeature1, FaceFeature faceFeature2, out float similarity, ASF_CompareModel compareModel = ASF_CompareModel.ASF_LIFE_PHOTO)
         {
-            int retCode = -1;
             similarity = 0f;
             if (faceFeature1 == null || faceFeature2 == null)
             {
@@ -273,7 +264,7 @@ namespace ArcFaceSDK
             MemoryUtil.StructureToPtr(asfFeatureStruct2, pFeature2);
             #endregion
             //调用SDK接口
-            retCode = ASFFunctions.ASFFaceFeatureCompare(pEngine, pFeature1, pFeature2, ref similarity, compareModel);
+            int retCode = ASFFunctions.ASFFaceFeatureCompare(pEngine, pFeature1, pFeature2, ref similarity, compareModel);
             MemoryUtil.FreeArray(pFeature1, pFeature2, asfFeatureStruct1.feature, asfFeatureStruct2.feature);
 
             return retCode;
@@ -287,19 +278,17 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFGetAge(out AgeInfo ageInfo)
         {
-            int retCode = -1;
             ageInfo = new AgeInfo();
             IntPtr pAgeInfo = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_AgeInfo>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFGetAge(pEngine, pAgeInfo);
+            int retCode = ASFFunctions.ASFGetAge(pEngine, pAgeInfo);
             if (retCode != 0)
             {
                 MemoryUtil.Free(pAgeInfo);
                 return retCode;
             }
             //转化结果
-            ASF_AgeInfo asfAgeInfo = new ASF_AgeInfo();
-            asfAgeInfo = MemoryUtil.PtrToStructure<ASF_AgeInfo>(pAgeInfo);
+            ASF_AgeInfo asfAgeInfo = MemoryUtil.PtrToStructure<ASF_AgeInfo>(pAgeInfo);
             ageInfo.num = asfAgeInfo.num;
             if (ageInfo.num > 0)
             {
@@ -318,19 +307,17 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFGetGender(out GenderInfo genderInfo)
         {
-            int retCode = -1;
             genderInfo = new GenderInfo();
             IntPtr pGenderInfo = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_GenderInfo>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFGetGender(pEngine, pGenderInfo);
+            int retCode = ASFFunctions.ASFGetGender(pEngine, pGenderInfo);
             if (retCode != 0)
             {
                 MemoryUtil.Free(pGenderInfo);
                 return retCode;
             }
             //转化结果
-            ASF_GenderInfo asfGenderInfo = new ASF_GenderInfo();
-            asfGenderInfo = MemoryUtil.PtrToStructure<ASF_GenderInfo>(pGenderInfo);
+            ASF_GenderInfo asfGenderInfo = MemoryUtil.PtrToStructure<ASF_GenderInfo>(pGenderInfo);
             genderInfo.num = asfGenderInfo.num;
             if (genderInfo.num > 0)
             {
@@ -349,19 +336,17 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFGetFace3DAngle(out Face3DAngle faceAngle)
         {
-            int retCode = -1;
             faceAngle = new Face3DAngle();
             IntPtr pFaceAngle = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_Face3DAngle>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFGetFace3DAngle(pEngine, pFaceAngle);
+            int retCode = ASFFunctions.ASFGetFace3DAngle(pEngine, pFaceAngle);
             if (retCode != 0)
             {
                 MemoryUtil.Free(pFaceAngle);
                 return retCode;
             }
             //转化结果
-            ASF_Face3DAngle asfFaceAngle = new ASF_Face3DAngle();
-            asfFaceAngle = MemoryUtil.PtrToStructure<ASF_Face3DAngle>(pFaceAngle);
+            ASF_Face3DAngle asfFaceAngle = MemoryUtil.PtrToStructure<ASF_Face3DAngle>(pFaceAngle);
             faceAngle.num = asfFaceAngle.num;
             if (faceAngle.num > 0)
             {
@@ -386,19 +371,17 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFGetLivenessScore(out LivenessInfo livenessInfo)
         {
-            int retCode = -1;
             livenessInfo = new LivenessInfo();
             IntPtr pLiveness = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_LivenessInfo>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFGetLivenessScore(pEngine, pLiveness);
+            int retCode = ASFFunctions.ASFGetLivenessScore(pEngine, pLiveness);
             if (retCode != 0)
             {
                 MemoryUtil.Free(pLiveness);
                 return retCode;
             }
             //转化结果
-            ASF_LivenessInfo asfLivenessInfo = new ASF_LivenessInfo();
-            asfLivenessInfo = MemoryUtil.PtrToStructure<ASF_LivenessInfo>(pLiveness);
+            ASF_LivenessInfo asfLivenessInfo = MemoryUtil.PtrToStructure<ASF_LivenessInfo>(pLiveness);
             livenessInfo.num = asfLivenessInfo.num;
             if (asfLivenessInfo.num > 0)
             {
@@ -420,7 +403,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFProcess_IR(Image image, MultiFaceInfo multiFaceInfo, int combinedMask, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_GRAY)
         {
-            int retCode = -1;
             if (multiFaceInfo == null)
             {
                 return ErrorCodeUtil.MULPTIFACEINFO_IS_NULL;
@@ -429,8 +411,7 @@ namespace ArcFaceSDK
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
@@ -459,7 +440,7 @@ namespace ArcFaceSDK
             }
             MemoryUtil.StructureToPtr(multiFaceInfoStruct, pMultiFaceInfo);
             //调用SDK接口
-            retCode = ASFFunctions.ASFProcess_IR(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pMultiFaceInfo, combinedMask);
+            int retCode = ASFFunctions.ASFProcess_IR(pEngine, imageInfo.width, imageInfo.height, imageInfo.format, imageInfo.imgData, pMultiFaceInfo, combinedMask);
             //释放内存
             MemoryUtil.FreeArray(multiFaceInfoStruct.faceID, multiFaceInfoStruct.faceOrients, multiFaceInfoStruct.faceRects, pMultiFaceInfo);
 
@@ -473,19 +454,17 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFGetLivenessScore_IR(out LivenessInfo livenessInfo)
         {
-            int retCode = -1;
             livenessInfo = new LivenessInfo();
             IntPtr pLiveness = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_LivenessInfo>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFGetLivenessScore_IR(pEngine, pLiveness);
+            int retCode = ASFFunctions.ASFGetLivenessScore_IR(pEngine, pLiveness);
             if (retCode != 0)
             {
                 MemoryUtil.Free(pLiveness);
                 return retCode;
             }
             //转化结果
-            ASF_LivenessInfo asfLivenessInfo = new ASF_LivenessInfo();
-            asfLivenessInfo = MemoryUtil.PtrToStructure<ASF_LivenessInfo>(pLiveness);
+            ASF_LivenessInfo asfLivenessInfo = MemoryUtil.PtrToStructure<ASF_LivenessInfo>(pLiveness);
             livenessInfo.num = asfLivenessInfo.num;
             if (asfLivenessInfo.num > 0)
             {
@@ -510,7 +489,10 @@ namespace ArcFaceSDK
                     ASFFunctions.ASFUninitEngine(pEngine);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         /// <summary>
@@ -537,18 +519,16 @@ namespace ArcFaceSDK
         public int ASFGetActiveFileInfo(out ActiveFileInfo activeFileInfo)
         {
             activeFileInfo = new ActiveFileInfo();
-            int retCode = -1;
             IntPtr pASFActiveFileInfo = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_ActiveFileInfo>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFGetActiveFileInfo(pASFActiveFileInfo);
+            int retCode = ASFFunctions.ASFGetActiveFileInfo(pASFActiveFileInfo);
             if (retCode != 0)
             {
                 MemoryUtil.Free(pASFActiveFileInfo);
                 return retCode;
             }
             //转化结果
-            ASF_ActiveFileInfo asfActiveFileInfo = new ASF_ActiveFileInfo();
-            asfActiveFileInfo = MemoryUtil.PtrToStructure<ASF_ActiveFileInfo>(pASFActiveFileInfo);
+            ASF_ActiveFileInfo asfActiveFileInfo = MemoryUtil.PtrToStructure<ASF_ActiveFileInfo>(pASFActiveFileInfo);
             activeFileInfo.startTime = Marshal.PtrToStringAnsi(asfActiveFileInfo.startTime);
             activeFileInfo.endTime = Marshal.PtrToStringAnsi(asfActiveFileInfo.endTime);
             activeFileInfo.platform = Marshal.PtrToStringAnsi(asfActiveFileInfo.platform);
@@ -569,7 +549,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFSetLivenessParam(float rgbThreshold = 0.5f, float irThreshole = 0.7f)
         {
-            int retCode = -1;
             ASF_LivenessThreshold livebessThreshold = new ASF_LivenessThreshold();
             //对应设置阈值
             livebessThreshold.thresholdmodel_BGR = (rgbThreshold >= 0 && rgbThreshold <= 1) ? rgbThreshold : 0.5f;
@@ -577,7 +556,7 @@ namespace ArcFaceSDK
             IntPtr pLivenessThreshold = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_LivenessThreshold>());
             MemoryUtil.StructureToPtr(livebessThreshold, pLivenessThreshold);
             //调用SDK接口
-            retCode = ASFFunctions.ASFSetLivenessParam(pEngine, pLivenessThreshold);
+            int retCode = ASFFunctions.ASFSetLivenessParam(pEngine, pLivenessThreshold);
             MemoryUtil.Free(pLivenessThreshold);
             return retCode;
         }
@@ -593,14 +572,12 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFDetectFacesEx(Image image, out MultiFaceInfo multiFaceInfo, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8, ASF_DetectModel detectModel = ASF_DetectModel.ASF_DETECT_MODEL_RGB)
         {
-            int retCode = -1;
             multiFaceInfo = new MultiFaceInfo();
             if (image == null)
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
@@ -609,16 +586,15 @@ namespace ArcFaceSDK
             IntPtr pImageInfo = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_ImageData>());
             MemoryUtil.StructureToPtr(asfInfoData, pImageInfo);
 
-            ASF_MultiFaceInfo multiFaceInfoStruct = new ASF_MultiFaceInfo();
             IntPtr pMultiFaceInfo = MemoryUtil.Malloc(MemoryUtil.SizeOf<ASF_MultiFaceInfo>());
             //调用SDK接口
-            retCode = ASFFunctions.ASFDetectFacesEx(pEngine, pImageInfo, pMultiFaceInfo);
+            int retCode = ASFFunctions.ASFDetectFacesEx(pEngine, pImageInfo, pMultiFaceInfo);
             if (retCode != 0)
             {
                 MemoryUtil.FreeArray(imageInfo.imgData, pMultiFaceInfo, pImageInfo);
                 return retCode;
             }
-            multiFaceInfoStruct = MemoryUtil.PtrToStructure<ASF_MultiFaceInfo>(pMultiFaceInfo);
+            ASF_MultiFaceInfo multiFaceInfoStruct = MemoryUtil.PtrToStructure<ASF_MultiFaceInfo>(pMultiFaceInfo);
             MemoryUtil.FreeArray(imageInfo.imgData, pMultiFaceInfo, pImageInfo);
 
             //转化非托管内存到托管内存
@@ -652,7 +628,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFProcessEx(Image image, MultiFaceInfo multiFaceInfo, int combinedMask, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8)
         {
-            int retCode = -1;
             if (multiFaceInfo == null)
             {
                 return ErrorCodeUtil.MULPTIFACEINFO_IS_NULL;
@@ -661,8 +636,7 @@ namespace ArcFaceSDK
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
@@ -696,7 +670,7 @@ namespace ArcFaceSDK
             MemoryUtil.StructureToPtr(asfInfoData, pImageInfo);
 
             //调用SDK接口
-            retCode = ASFFunctions.ASFProcessEx(pEngine, pImageInfo, pMultiFaceInfo, combinedMask);
+            int retCode = ASFFunctions.ASFProcessEx(pEngine, pImageInfo, pMultiFaceInfo, combinedMask);
             //释放内存
             MemoryUtil.FreeArray(imageInfo.imgData, multiFaceInfoStruct.faceID, multiFaceInfoStruct.faceOrients, multiFaceInfoStruct.faceRects, pMultiFaceInfo, pImageInfo);
 
@@ -714,7 +688,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFProcessEx_IR(Image image, MultiFaceInfo multiFaceInfo, int combinedMask, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_GRAY)
         {
-            int retCode = -1;
             if (multiFaceInfo == null)
             {
                 return ErrorCodeUtil.MULPTIFACEINFO_IS_NULL;
@@ -723,8 +696,7 @@ namespace ArcFaceSDK
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
@@ -758,7 +730,7 @@ namespace ArcFaceSDK
             MemoryUtil.StructureToPtr(asfInfoData, pImageInfo);
 
             //调用SDK接口
-            retCode = ASFFunctions.ASFProcessEx_IR(pEngine, pImageInfo, pMultiFaceInfo, combinedMask);
+            int retCode = ASFFunctions.ASFProcessEx_IR(pEngine, pImageInfo, pMultiFaceInfo, combinedMask);
             //释放内存
             MemoryUtil.FreeArray(imageInfo.imgData, multiFaceInfoStruct.faceID, multiFaceInfoStruct.faceOrients, multiFaceInfoStruct.faceRects, pMultiFaceInfo, pImageInfo);
 
@@ -776,7 +748,6 @@ namespace ArcFaceSDK
         /// <returns>返回0表示正常；返回负数请根据ErrorCodeUtil类注释查看；其他值请在官网-帮助中心查询</returns>
         public int ASFFaceFeatureExtractEx(Image image, MultiFaceInfo multiFaceInfo, out FaceFeature faceFeature, int faceIndex = 0, ASF_ImagePixelFormat imageFormat = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8)
         {
-            int retCode = -1;
             faceFeature = new FaceFeature();
             if (multiFaceInfo == null)
             {
@@ -790,8 +761,7 @@ namespace ArcFaceSDK
             {
                 return ErrorCodeUtil.IMAGE_IS_NULL;
             }
-            ImageInfo imageInfo = new ImageInfo();
-            imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
+            ImageInfo imageInfo = ASF_ImagePixelFormat.ASVL_PAF_RGB24_B8G8R8.Equals(imageFormat) ? ImageUtil.ReadBMP(image) : ImageUtil.ReadBMP_IR(image);
             if (imageInfo == null)
             {
                 return ErrorCodeUtil.IMAGE_DATA_READ_FAIL;
@@ -809,7 +779,7 @@ namespace ArcFaceSDK
             MemoryUtil.StructureToPtr(asfInfoData, pImageInfo);
 
             //调用SDK接口
-            retCode = ASFFunctions.ASFFaceFeatureExtractEx(pEngine, pImageInfo, pSIngleFaceInfo, pAsfFaceFeature);
+            int retCode = ASFFunctions.ASFFaceFeatureExtractEx(pEngine, pImageInfo, pSIngleFaceInfo, pAsfFaceFeature);
             if (retCode != 0)
             {
                 MemoryUtil.FreeArray(pSIngleFaceInfo, pAsfFaceFeature, imageInfo.imgData, pImageInfo);

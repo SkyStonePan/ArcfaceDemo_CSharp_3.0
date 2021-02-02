@@ -3,7 +3,7 @@
     /// <summary>
     /// 接口封装时定义的错误码
     /// </summary>
-    public class ErrorCodeUtil
+    public static class ErrorCodeUtil
     {
         /// <summary>
         /// image不能为空

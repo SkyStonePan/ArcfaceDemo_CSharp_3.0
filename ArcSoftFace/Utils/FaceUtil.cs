@@ -6,7 +6,7 @@ using ArcFaceSDK;
 
 namespace ArcSoftFace.Utils
 {
-    public class FaceUtil
+    public static class FaceUtil
     {
         /// <summary>
         /// 人脸检测
@@ -16,7 +16,7 @@ namespace ArcSoftFace.Utils
         /// <returns></returns>
         public static MultiFaceInfo DetectFace(FaceEngine faceEngine, Image image)
         {
-            MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
+            MultiFaceInfo multiFaceInfo = null;
             try
             {
                 faceEngine.ASFDetectFacesEx(image, out multiFaceInfo);
@@ -36,7 +36,7 @@ namespace ArcSoftFace.Utils
         /// <returns></returns>
         public static MultiFaceInfo DetectFaceIR(FaceEngine faceEngine, Bitmap image)
         {
-            MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
+            MultiFaceInfo multiFaceInfo = null;
             try
             {
                 faceEngine.ASFDetectFacesEx(image,out multiFaceInfo,ASF_ImagePixelFormat.ASVL_PAF_GRAY);
@@ -64,10 +64,10 @@ namespace ArcSoftFace.Utils
                 {
                     return faceFeature;
                 }
-                MultiFaceInfo multiFaceInfo = new MultiFaceInfo();
+                MultiFaceInfo multiFaceInfo;
                 //人脸检测
                 retCode = faceEngine.ASFDetectFacesEx(image,out multiFaceInfo);
-                if(retCode != 0)
+                if(retCode != 0 || multiFaceInfo.faceNum <=0)
                 {
                     return faceFeature;
                 }
@@ -91,7 +91,7 @@ namespace ArcSoftFace.Utils
         /// <returns>单人脸特征</returns>
         public static FaceFeature ExtractFeature(FaceEngine faceEngine, Image image, SingleFaceInfo singleFaceInfo)
         {
-            FaceFeature faceFeature = new FaceFeature();
+            FaceFeature faceFeature = null;
             try
             {
                 MultiFaceInfo multiFaceInfo = new MultiFaceInfo();

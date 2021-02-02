@@ -1,6 +1,4 @@
 ﻿using ArcFaceSDK.SDKModels;
-using System;
-using System.Collections.Generic;
 namespace ArcFaceSDK.Entity
 {
     /// <summary>

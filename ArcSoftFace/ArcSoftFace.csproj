@@ -122,6 +122,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Entity\DictionaryUnit.cs" />
     <Compile Include="Entity\FaceTrackUnit.cs" />
     <Compile Include="FaceForm.cs">
       <SubType>Form</SubType>

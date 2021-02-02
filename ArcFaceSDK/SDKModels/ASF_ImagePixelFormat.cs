@@ -1,6 +1,6 @@
 ﻿namespace ArcFaceSDK.SDKModels
 {
-    public enum ASF_ImagePixelFormat : int
+    public enum ASF_ImagePixelFormat
     {
         /// <summary>
         /// RGB24图片格式

@@ -6,7 +6,7 @@ namespace ArcFaceSDK.Utils
     /// <summary>
     /// 内存操作方法
     /// </summary>
-    public class MemoryUtil
+    public static class MemoryUtil
     {
         /// <summary>
         /// 申请内存

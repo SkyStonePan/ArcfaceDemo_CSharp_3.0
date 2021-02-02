@@ -10,7 +10,7 @@ namespace ArcFaceSDK.Utils
     /// <summary>
     /// 图像处理方法
     /// </summary>
-    public class ImageUtil
+    public static class ImageUtil
     {
         /// <summary>
         /// 获取RGB图片信息
@@ -45,12 +45,12 @@ namespace ArcFaceSDK.Utils
                                 
                 imageInfo.imgData = MemoryUtil.Malloc(sourceBitArray.Length);
                 MemoryUtil.Copy(sourceBitArray, 0, imageInfo.imgData, sourceBitArray.Length);
-
                 return imageInfo;
             }
             catch (Exception e)
             {
-                throw e;
+                Console.WriteLine(e.Message);
+                throw;
             }
             finally
             {
@@ -111,7 +111,8 @@ namespace ArcFaceSDK.Utils
             }
             catch (Exception e)
             {
-                throw e;
+                Console.WriteLine(e.Message);
+                throw;
             }
             finally
             {
@@ -143,7 +144,8 @@ namespace ArcFaceSDK.Utils
             }
             catch (Exception e)
             {
-                throw e;
+                Console.WriteLine(e.Message);
+                throw;
             }
             finally
             {
@@ -155,14 +157,12 @@ namespace ArcFaceSDK.Utils
         /// 用矩形框标记图片指定区域，添加年龄和性别标注
         /// </summary>
         /// <param name="image">图片</param>
-        /// <param name="startX">矩形框左上角X坐标</param>
-        /// <param name="startY">矩形框左上角Y坐标</param>
-        /// <param name="width">矩形框宽度</param>
-        /// <param name="height">矩形框高度</param>
-        /// <param name="age">年龄</param>
-        /// <param name="gender">性别</param>
+        /// <param name="ageAyy">年龄数组</param>
+        /// <param name="genderAyy">性别数组</param>
+        /// <param name="scaleRate">缩放比例</param>
+        /// <param name="faceSize">人脸数量</param>
         /// <returns>标记后的图片</returns>
-        public static Image MarkRectAndString(Image image, int startX, int startY, int width, int height, int age, int gender, int showWidth)
+        public static Image MarkRectAndString(Image image, MRECT[] mrectAyy, int[] ageAyy, int[] genderAyy, int showWidth, float scaleRate,int faceSize)
         {
             Image clone = (Image)image.Clone();
             Graphics g = Graphics.FromImage(clone);
@@ -172,44 +172,31 @@ namespace ArcFaceSDK.Utils
                 int penWidth = image.Width / showWidth;
                 Pen pen = new Pen(brush, penWidth > 1 ? 2 * penWidth : 2);
                 pen.DashStyle = System.Drawing.Drawing2D.DashStyle.Dash;
-                g.DrawRectangle(pen, new Rectangle(startX < 1 ? 0 : startX, startY < 1 ? 0 : startY, width, height));
-                string genderStr = string.Empty;
-                if (gender >= 0)
+                for(int faceIndex = 0;faceIndex< faceSize; faceIndex++)
                 {
-                    if (gender == 0)
-                    {
-                        genderStr = "男";
-                    }
-                    else if (gender == 1)
-                    {
-                        genderStr = "女";
-                    }
-                }
-                int fontSize = image.Width / showWidth;
-                if (fontSize > 1)
-                {
-                    int temp = 12;
-                    for (int i = 0; i < fontSize; i++)
-                    {
-                        temp += 6;
-                    }
-                    fontSize = temp;
-                }
-                else if (fontSize == 1)
-                {
-                    fontSize = 14;
-                }
-                else
-                {
-                    fontSize = 12;
-                }
-                g.DrawString(string.Format("Age:{0}   Gender:{1}", age, genderStr), new Font(FontFamily.GenericSerif, fontSize), brush, startX < 1 ? 0 : startX, (startY - 20) < 1 ? 0 : startY - 20);
+                    int startX = (int)(mrectAyy[faceIndex].left * scaleRate);
+                    int startY = (int)(mrectAyy[faceIndex].top * scaleRate);
+                    int width = (int)(mrectAyy[faceIndex].right * scaleRate) - (int)(mrectAyy[faceIndex].left * scaleRate);
+                    int height = (int)(mrectAyy[faceIndex].bottom * scaleRate) - (int)(mrectAyy[faceIndex].top * scaleRate);
 
+                    g.DrawRectangle(pen, new Rectangle(startX < 1 ? 0 : startX, startY < 1 ? 0 : startY, width, height));
+                    string genderStr = string.Empty;
+                    switch (genderAyy[faceIndex])
+                    {
+                        case 0:
+                            genderStr = "男";break;
+                        case 1:
+                            genderStr = "女";break;
+                        default:break;
+                    }
+                    g.DrawString(string.Format("Face:{0} {1}", faceIndex, genderStr), new Font(FontFamily.GenericSerif, 12), brush, startX < 1 ? 0 : startX, (startY - 20) < 1 ? 0 : startY - 20);
+                }
                 return clone;
             }
             catch (Exception e)
             {
-                throw e;
+                Console.WriteLine(e.Message);
+                throw;
             }
             finally
             {
@@ -237,7 +224,7 @@ namespace ArcFaceSDK.Utils
                 //将宽度调整为4的整数倍
                 if (width % 4 != 0)
                 {
-                    width = width - width % 4;
+                    width -= width % 4;
                 }
 
                 Bitmap destBitmap = new Bitmap(width, height);
@@ -254,7 +241,8 @@ namespace ArcFaceSDK.Utils
             }
             catch (Exception e)
             {
-                throw e;
+                Console.WriteLine(e.Message);
+                throw;
             }
             finally
             {
@@ -276,29 +264,22 @@ namespace ArcFaceSDK.Utils
         /// <returns>剪裁后的图片</returns>
         public static Image CutImage(Image src, int left, int top, int right, int bottom)
         {
-            try
+            Bitmap srcBitmap = new Bitmap(src);
+            int width = right - left;
+            int height = bottom - top;
+            Bitmap destBitmap = new Bitmap(width, height);
+            using (Graphics g = Graphics.FromImage(destBitmap))
             {
-                Bitmap srcBitmap = new Bitmap(src);
-                int width = right - left;
-                int height = bottom - top;
-                Bitmap destBitmap = new Bitmap(width, height);
-                using (Graphics g = Graphics.FromImage(destBitmap))
-                {
-                    g.Clear(Color.Transparent);
+                g.Clear(Color.Transparent);
 
-                    //设置画布的描绘质量         
-                    g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
-                    g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
-                    g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
-                    g.DrawImage(srcBitmap, new Rectangle(0, 0, width, height), left, top, width, height, GraphicsUnit.Pixel);
-                }
+                //设置画布的描绘质量         
+                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                g.DrawImage(srcBitmap, new Rectangle(0, 0, width, height), left, top, width, height, GraphicsUnit.Pixel);
+            }
 
-                return destBitmap;
-            }
-            catch (Exception e)
-            {
-                throw e;
-            }
+            return destBitmap;
         }
 
         /// <summary>
@@ -333,7 +314,7 @@ namespace ArcFaceSDK.Utils
         public static float GetWidthAndHeight(int oldWidth, int oldHeigt, int newWidth, int newHeight)
         {
             //按比例缩放           
-            float scaleRate = 0.0f;
+            float scaleRate;
             if (oldWidth >= newWidth && oldHeigt >= newHeight)
             {
                 int widthDis = oldWidth - newWidth;
@@ -347,11 +328,11 @@ namespace ArcFaceSDK.Utils
                     scaleRate = newHeight * 1f / oldHeigt;
                 }
             }
-            else if (oldWidth >= newWidth && oldHeigt < newHeight)
+            else if (oldWidth >= newWidth)
             {
                 scaleRate = newWidth * 1f / oldWidth;
             }
-            else if (oldWidth < newWidth && oldHeigt >= newHeight)
+            else if (oldHeigt >= newHeight)
             {
                 scaleRate = newHeight * 1f / oldHeigt;
             }
